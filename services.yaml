@@ -1,0 +1,11 @@
+reset_timer:
+  name: Reset timer
+  description: Reset usage timer to zero.
+  fields:
+    entity_id:
+      description: Entity id(s) that will have the timer reset.
+      example: sensor.my_usage_timer
+      selector:
+        entity:
+          integration: cumulative_usage
+          domain: cumulative_usage
