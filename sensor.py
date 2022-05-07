@@ -5,7 +5,12 @@ import sys
 import json
 import voluptuous as vol
 from datetime import datetime
-from homeassistant.helpers.entity import Entity
+
+from homeassistant.components.sensor import (
+    SensorDeviceClass,
+    SensorEntity,
+    SensorStateClass,
+)
 from homeassistant.helpers.config_validation import PLATFORM_SCHEMA
 from homeassistant.helpers import entity_platform
 from homeassistant.helpers import config_validation as cv
@@ -70,8 +75,11 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
     _LOGGER.debug("Setup done.")
 
 
-class CumulativeUsageSensor(Entity):
+class CumulativeUsageSensor(SensorEntity):
     """Cumulative usage sensor entity."""
+
+    _attr_device_class = SensorDeviceClass.DURATION
+    _attr_state_class = SensorStateClass.MEASUREMENT
 
     def __init__(self, hass, unique_id, entity_id, name, filepath, unit_of_measurement):
         """Initialize the sensor."""
@@ -81,7 +89,7 @@ class CumulativeUsageSensor(Entity):
         self._unique_id = unique_id if unique_id else f"{entity_id}_cumulative_usage"
         self._entity_id = entity_id
         self._name = name
-        self._unit = unit_of_measurement  # one of 'h', 'm', 's', default is 'h'
+        self._attr_native_unit_of_measurement = unit_of_measurement  # one of 'h', 'm', 's', default is 'h'
         self._filepath = filepath if filepath else f'/config/custom_components/cumulative_usage/data/d_{unique_id}.json'
         self._state = None
         self._load_persisted()
@@ -102,27 +110,24 @@ class CumulativeUsageSensor(Entity):
         return False
 
     @property
-    def state(self):
-        """Return the state of the sensor."""
+    def native_value(self):
+        """Return the native value of the sensor."""
         if not self._state:
             return None
-        u = self._unit.lower()
+        u = self.native_unit_of_measurement.lower()
         c = self._state['usage_in_sec']
         if u == 'h':
-            return '{:.1f}'.format(c/3600.0)
+            return c/3600.0
         elif u == 'm':
-            return '{:.1f}'.format(c/60.0)
-        return '{:.1f}'.format(c)
+            return c/60.0
+        return c
 
     @property
-    def device_state_attributes(self):
-        _LOGGER.debug("Device state attributes: %s", self._state)
-        return self._state
-
-    @property
-    def unit_of_measurement(self):
-        """Return the unit of measurement of the sensor."""
-        return self._unit
+    def extra_state_attributes(self):
+        _LOGGER.debug("Extra state attributes: %s", self._state)
+        ret = dict(self._state)
+        ret.pop('usage_in_sec')
+        return ret
 
     async def async_added_to_hass(self):
         """Register callbacks."""

@@ -3,5 +3,5 @@
   "name": "Cumulative usage",
   "documentation": "https://www.home-assistant.io/integrations/cumulative_usage",
   "codeowners": [],
-  "version": "0.0.1"
+  "version": "0.0.2"
 }
